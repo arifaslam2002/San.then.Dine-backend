@@ -6,7 +6,7 @@ import connectDB from "./config/db.js";
 import foodRoutes from "./routes/foodRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
-
+import tableRoutes from "./routes/tableRoutes.js";
 connectDB();
 
 const app = express();
@@ -23,6 +23,7 @@ app.get("/", (req, res) => {
 app.use("/api/foods", foodRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/tables", tableRoutes);
 
 const PORT = 3000;
 

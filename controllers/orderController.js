@@ -1,5 +1,6 @@
 import Order from "../models/Order.js";
 import Food from "../models/Food.js";
+import Table from "../models/Table.js";
 export const createOrder = async (req, res) => {
   try {
     const {
@@ -31,6 +32,7 @@ export const createOrder = async (req, res) => {
       totalAmount,
       paymentMethod,
     });
+    await Table.findOneAndUpdate({ tableNumber }, { status: "occupied" });
     for (const item of items) {
       await Food.findByIdAndUpdate(item.foodId, {
         $inc: {
@@ -96,6 +98,12 @@ export const updateOrderStatus = async (req, res) => {
       message: "Order status updated successfully",
       order,
     });
+    if (status === "served") {
+      await Table.findOneAndUpdate(
+        { tableNumber: order.tableNumber },
+        { status: "available" },
+      );
+    }
   } catch (error) {
     res.status(500).json({
       message: "Failed to update order status",
@@ -140,6 +148,10 @@ export const cancelOrder = async (req, res) => {
     order.status = "cancelled";
 
     await order.save();
+    await Table.findOneAndUpdate(
+      { tableNumber: order.tableNumber },
+      { status: "available" },
+    );
     for (const item of order.items) {
       await Food.findByIdAndUpdate(item.foodId, {
         $inc: {

@@ -102,3 +102,53 @@ export const createFood = async (req, res) => {
     });
   }
 };
+export const updateFood = async (req, res) => {
+  try {
+    const {
+      name,
+      category,
+      price,
+      description,
+      ingredients,
+    } = req.body;
+
+    const food = await Food.findById(req.params.id);
+
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found",
+      });
+    }
+
+    if (name) food.name = name;
+    if (category) food.category = category;
+    if (price) food.price = price;
+    if (description) food.description = description;
+
+    if (ingredients) {
+      food.ingredients = JSON.parse(ingredients);
+    }
+
+    if (req.file) {
+      const uploadResult = await uploadToCloudinary(
+        req.file.buffer
+      );
+
+      food.image = uploadResult.secure_url;
+    }
+
+    await food.save();
+
+    res.status(200).json({
+      message: "Food updated successfully",
+      food,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to update food",
+      error: error.message,
+    });
+  }
+};

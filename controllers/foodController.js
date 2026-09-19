@@ -1,5 +1,5 @@
 import Food from "../models/Food.js";
-
+import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 export const getFoods = async (req, res) => {
   try {
     const foods = await Food.find();
@@ -64,6 +64,40 @@ export const getAvailableFoods = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch available foods",
+      error: error.message,
+    });
+  }
+};
+export const createFood = async (req, res) => {
+  try {
+    const { name, category, price, description, ingredients } = req.body;
+
+    if (!name || !category || !price || !description || !req.file) {
+      return res.status(400).json({
+        message: "Name, category, price, description and image are required",
+      });
+    }
+
+    const uploadResult = await uploadToCloudinary(req.file.buffer);
+
+    const food = await Food.create({
+      name,
+      category,
+      price,
+      image: uploadResult.secure_url,
+      description,
+      ingredients: ingredients ? JSON.parse(ingredients) : [],
+    });
+
+    res.status(201).json({
+      message: "Food created successfully",
+      food,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to create food",
       error: error.message,
     });
   }

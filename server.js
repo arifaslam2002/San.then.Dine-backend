@@ -1,10 +1,11 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import foodRoutes from "./routes/foodRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
-dotenv.config();
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 connectDB();
 
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/foods", foodRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 const PORT = 3000;
 

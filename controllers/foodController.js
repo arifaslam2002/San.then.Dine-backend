@@ -104,13 +104,7 @@ export const createFood = async (req, res) => {
 };
 export const updateFood = async (req, res) => {
   try {
-    const {
-      name,
-      category,
-      price,
-      description,
-      ingredients,
-    } = req.body;
+    const { name, category, price, description, ingredients } = req.body;
 
     const food = await Food.findById(req.params.id);
 
@@ -130,9 +124,7 @@ export const updateFood = async (req, res) => {
     }
 
     if (req.file) {
-      const uploadResult = await uploadToCloudinary(
-        req.file.buffer
-      );
+      const uploadResult = await uploadToCloudinary(req.file.buffer);
 
       food.image = uploadResult.secure_url;
     }
@@ -148,6 +140,31 @@ export const updateFood = async (req, res) => {
 
     res.status(500).json({
       message: "Failed to update food",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteFood = async (req, res) => {
+  try {
+    const food = await Food.findById(req.params.id);
+
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found",
+      });
+    }
+
+    await Food.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      message: "Food deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to delete food",
       error: error.message,
     });
   }

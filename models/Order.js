@@ -29,6 +29,12 @@ const orderItemSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
   {
+     orderType: {
+      type: String,
+      enum: ["dine-in", "parcel"],
+      default: "dine-in",
+      required: true,
+    },
     customerName: {
       type: String,
       required: true,
@@ -43,7 +49,7 @@ const orderSchema = new mongoose.Schema(
 
     tableNumber: {
       type: String,
-      required: true,
+      default: null,
     },
 
     items: {

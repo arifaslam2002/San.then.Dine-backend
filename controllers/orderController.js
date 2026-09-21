@@ -5,6 +5,7 @@ import { getIO } from "../utils/socket.js";
 export const createOrder = async (req, res) => {
   try {
     const {
+      orderType = "dine-in",
       customerName,
       phone,
       tableNumber,
@@ -13,27 +14,53 @@ export const createOrder = async (req, res) => {
       paymentMethod,
     } = req.body;
 
-    if (
-      !customerName ||
-      !phone ||
-      !tableNumber ||
-      !items ||
-      items.length === 0
-    ) {
+    // Validate order type
+    if (!["dine-in", "parcel"].includes(orderType)) {
+      return res.status(400).json({
+        message: "Invalid order type",
+      });
+    }
+
+    // Table is required only for dine-in orders
+    if (orderType === "dine-in" && !tableNumber) {
+      return res.status(400).json({
+        message: "Table number is required for dine-in orders",
+      });
+    }
+
+    // Common order validation
+    if (!customerName || !phone || !items || items.length === 0) {
       return res.status(400).json({
         message: "Missing required order details",
       });
     }
 
     const order = await Order.create({
+      orderType,
       customerName,
       phone,
-      tableNumber,
+      tableNumber: orderType === "dine-in" ? tableNumber : null,
       items,
       totalAmount,
       paymentMethod,
     });
-    await Table.findOneAndUpdate({ tableNumber }, { status: "occupied" });
+
+    // Occupy table only for dine-in orders
+    if (orderType === "dine-in") {
+      const table = await Table.findOneAndUpdate(
+        { tableNumber },
+        { status: "occupied" },
+        { new: true },
+      );
+
+      if (!table) {
+        return res.status(404).json({
+          message: "Table not found",
+        });
+      }
+    }
+
+    // Increase ordered count for each food
     for (const item of items) {
       await Food.findByIdAndUpdate(item.foodId, {
         $inc: {
@@ -41,18 +68,27 @@ export const createOrder = async (req, res) => {
         },
       });
     }
+
     const io = getIO();
 
+    // Notify kitchen/admin
     io.emit("newOrder", order);
-    io.emit("tableStatusUpdated", {
-      tableNumber,
-      status: "occupied",
-    });
+
+    // Update table status only for dine-in
+    if (orderType === "dine-in") {
+      io.emit("tableStatusUpdated", {
+        tableNumber,
+        status: "occupied",
+      });
+    }
+
     res.status(201).json({
       message: "Order created successfully",
       order,
     });
   } catch (error) {
+    console.error("Create order error:", error);
+
     res.status(500).json({
       message: "Failed to create order",
       error: error.message,

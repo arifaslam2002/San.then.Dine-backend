@@ -1,4 +1,6 @@
 import express from "express";
+import protect from "../middleware/authMiddleware.js";
+import { adminOnly } from "../middleware/roleMiddleware.js";
 import {
   getFoods,
   getFoodById,
@@ -6,16 +8,16 @@ import {
   getAvailableFoods,
   createFood,
   updateFood,
-  deleteFood
+  deleteFood,
 } from "../controllers/foodController.js";
 import upload from "../middleware/uploadMiddleware.js";
 const router = express.Router();
 router.get("/", getFoods);
 router.get("/available", getAvailableFoods);
-router.post("/", upload.single("image"), createFood);
-router.patch("/:id", upload.single("image"), updateFood);
-router.delete("/:id", deleteFood);
+router.post("/", protect, adminOnly, upload.single("image"), createFood);
+router.patch("/:id", protect, adminOnly, upload.single("image"), updateFood);
+router.delete("/:id", protect, adminOnly, deleteFood);
 router.get("/:id", getFoodById);
-router.patch("/:id/availability", updateFoodAvailability);
+router.patch("/:id/availability", protect, adminOnly, updateFoodAvailability);
 
 export default router;

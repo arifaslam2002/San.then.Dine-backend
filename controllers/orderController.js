@@ -1,6 +1,7 @@
 import Order from "../models/Order.js";
 import Food from "../models/Food.js";
 import Table from "../models/Table.js";
+import { getIO } from "../utils/socket.js";
 export const createOrder = async (req, res) => {
   try {
     const {
@@ -40,6 +41,13 @@ export const createOrder = async (req, res) => {
         },
       });
     }
+    const io = getIO();
+
+    io.emit("newOrder", order);
+    io.emit("tableStatusUpdated", {
+      tableNumber,
+      status: "occupied",
+    });
     res.status(201).json({
       message: "Order created successfully",
       order,
@@ -94,16 +102,28 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
-    res.status(200).json({
-      message: "Order status updated successfully",
-      order,
-    });
     if (status === "served") {
       await Table.findOneAndUpdate(
         { tableNumber: order.tableNumber },
         { status: "available" },
       );
+
+      const io = getIO();
+
+      io.emit("tableStatusUpdated", {
+        tableNumber: order.tableNumber,
+        status: "available",
+      });
     }
+
+    const io = getIO();
+
+    io.emit("orderStatusUpdated", order);
+
+    res.status(200).json({
+      message: "Order status updated successfully",
+      order,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Failed to update order status",
@@ -159,6 +179,12 @@ export const cancelOrder = async (req, res) => {
         },
       });
     }
+    const io = getIO();
+
+    io.emit("orderStatusUpdated", {
+      orderId: order._id,
+      status: order.status,
+    });
     res.status(200).json({
       message: "Order cancelled successfully",
       order,

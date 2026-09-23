@@ -23,13 +23,13 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["admin", "kitchen"],
+      enum: ["admin", "kitchen", "counter"],
       default: "admin",
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const User = mongoose.model("User", userSchema);

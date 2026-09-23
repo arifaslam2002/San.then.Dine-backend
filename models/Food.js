@@ -33,7 +33,21 @@ const foodSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    addons: [
+      {
+        name: {
+          type: String,
+          required: true,
+          trim: true,
+        },
 
+        price: {
+          type: Number,
+          required: true,
+          min: 0,
+        },
+      },
+    ],
     rating: {
       type: Number,
       default: 0,

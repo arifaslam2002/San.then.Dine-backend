@@ -2,12 +2,7 @@ import Review from "../models/Review.js";
 import Food from "../models/Food.js";
 export const createReview = async (req, res) => {
   try {
-    const {
-      foodId,
-      userName,
-      rating,
-      comment,
-    } = req.body;
+    const { foodId, userName, rating, comment } = req.body;
 
     if (!foodId || !userName || !rating || !comment) {
       return res.status(400).json({
@@ -24,21 +19,14 @@ export const createReview = async (req, res) => {
 
     const reviews = await Review.find({ foodId });
 
-    const totalRating = reviews.reduce(
-      (sum, review) => sum + review.rating,
-      0
-    );
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
 
-    const averageRating =
-      totalRating / reviews.length;
+    const averageRating = totalRating / reviews.length;
 
-    await Food.findByIdAndUpdate(
-      foodId,
-      {
-        rating: Number(averageRating.toFixed(1)),
-        reviews: reviews.length,
-      }
-    );
+    await Food.findByIdAndUpdate(foodId, {
+      rating: Number(averageRating.toFixed(1)),
+      reviews: reviews.length,
+    });
 
     res.status(201).json({
       message: "Review added successfully",

@@ -54,3 +54,31 @@ export const createTable = async (req, res) => {
     });
   }
 };
+export const getTableByNumber = async (req, res) => {
+  try {
+    const table = await Table.findOne({
+      tableNumber: req.params.tableNumber,
+    });
+
+    if (!table) {
+      return res.status(404).json({
+        message: "Table not found",
+      });
+    }
+
+    if (!table.active) {
+      return res.status(400).json({
+        message: "Table is not active",
+      });
+    }
+
+    res.status(200).json(table);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to fetch table",
+      error: error.message,
+    });
+  }
+};

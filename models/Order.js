@@ -23,13 +23,34 @@ const orderItemSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    addons: [
+      {
+        name: {
+          type: String,
+          required: true,
+        },
+
+        price: {
+          type: Number,
+          required: true,
+          min: 0,
+        },
+      },
+    ],
+
+    note: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 200,
+    },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const orderSchema = new mongoose.Schema(
   {
-     orderType: {
+    orderType: {
       type: String,
       enum: ["dine-in", "parcel"],
       default: "dine-in",
@@ -51,7 +72,21 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-
+    guestCount: {
+      type: Number,
+      default: null,
+      min: 1,
+    },
+    sessionId: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    paymentStatus: {
+  type: String,
+  enum: ["unpaid", "pending", "paid"],
+  default: "unpaid",
+},
     items: {
       type: [orderItemSchema],
       required: true,
@@ -64,8 +99,8 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["counter", "online"],
-      default: "counter",
+      enum: ["cash", "upi", "card"],
+      default: "cash",
     },
 
     status: {
@@ -83,7 +118,7 @@ const orderSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Order = mongoose.model("Order", orderSchema);

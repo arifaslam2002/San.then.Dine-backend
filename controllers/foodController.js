@@ -70,7 +70,8 @@ export const getAvailableFoods = async (req, res) => {
 };
 export const createFood = async (req, res) => {
   try {
-    const { name, category, price, description, ingredients } = req.body;
+    const { name, category, price, description, ingredients, addons } =
+      req.body;
 
     if (!name || !category || !price || !description || !req.file) {
       return res.status(400).json({
@@ -87,6 +88,7 @@ export const createFood = async (req, res) => {
       image: uploadResult.secure_url,
       description,
       ingredients: ingredients ? JSON.parse(ingredients) : [],
+      addons: addons ? JSON.parse(addons) : [],
     });
 
     res.status(201).json({
@@ -104,7 +106,8 @@ export const createFood = async (req, res) => {
 };
 export const updateFood = async (req, res) => {
   try {
-    const { name, category, price, description, ingredients } = req.body;
+    const { name, category, price, description, ingredients, addons } =
+      req.body;
 
     const food = await Food.findById(req.params.id);
 
@@ -122,7 +125,9 @@ export const updateFood = async (req, res) => {
     if (ingredients) {
       food.ingredients = JSON.parse(ingredients);
     }
-
+    if (addons) {
+      food.addons = JSON.parse(addons);
+    }
     if (req.file) {
       const uploadResult = await uploadToCloudinary(req.file.buffer);
 

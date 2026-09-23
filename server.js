@@ -11,21 +11,27 @@ import orderRoutes from "./routes/orderRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import tableRoutes from "./routes/tableRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import diningSessionRoutes from "./routes/diningSessionRoutes.js";
 connectDB();
 
 const app = express();
 const httpServer = createServer(app);
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://scan-then-dine.vercel.app",
+];
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PATCH", "DELETE"],
   },
 });
 setIO(io);
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: allowedOrigins,
   }),
 );
 app.use(express.json());
@@ -41,6 +47,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/tables", tableRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/dining-sessions", diningSessionRoutes);
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 

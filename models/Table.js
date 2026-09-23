@@ -8,7 +8,11 @@ const tableSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
-
+    capacity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
     status: {
       type: String,
       enum: ["available", "occupied"],
@@ -22,7 +26,7 @@ const tableSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Table = mongoose.model("Table", tableSchema);

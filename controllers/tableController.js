@@ -82,3 +82,44 @@ export const getTableByNumber = async (req, res) => {
     });
   }
 };
+export const getTablesWithAvailability = async (req, res) => {
+  try {
+    const tables = await Table.find({ active: true });
+
+    const result = await Promise.all(
+      tables.map(async (table) => {
+        const sessions = await DiningSession.find({
+          tableNumber: table.tableNumber,
+          status: "active",
+        });
+
+        const occupiedSeats = sessions.reduce(
+          (total, session) => total + session.guestCount,
+          0,
+        );
+
+        const availableSeats = Math.max(
+          0,
+          table.capacity - occupiedSeats,
+        );
+
+        return {
+          _id: table._id,
+          tableNumber: table.tableNumber,
+          capacity: table.capacity,
+          occupiedSeats,
+          availableSeats,
+          status: availableSeats === 0 ? "occupied" : "available",
+        };
+      }),
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to fetch table availability:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch table availability",
+    });
+  }
+};

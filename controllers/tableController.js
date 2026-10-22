@@ -1,5 +1,5 @@
 import Table from "../models/Table.js";
-
+import DiningSession from "../models/DiningSession.js";
 export const getTables = async (req, res) => {
   try {
     const tables = await Table.find().sort({

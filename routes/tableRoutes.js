@@ -11,7 +11,8 @@ import {
 const router = express.Router();
 
 router.get("/", getTables);
+router.get("/availability", getTablesWithAvailability);
 router.get("/:tableNumber", getTableByNumber);
 router.post("/", protect, adminOnly, createTable);
-router.get("/availability", getTablesWithAvailability);
+
 export default router;

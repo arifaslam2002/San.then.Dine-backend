@@ -1,13 +1,15 @@
 import DiningSession from "../models/DiningSession.js";
 import Order from "../models/Order.js";
 import Table from "../models/Table.js";
+
 export const createDiningSession = async (req, res) => {
   try {
     const { tableNumber, guestCount } = req.body;
+    const guests = Number(guestCount);
 
-    if (!tableNumber || !guestCount) {
+    if (!tableNumber || !Number.isInteger(guests) || guests < 1) {
       return res.status(400).json({
-        message: "Table number and guest count are required",
+        message: "Valid table number and guest count are required",
       });
     }
 
@@ -25,46 +27,57 @@ export const createDiningSession = async (req, res) => {
       });
     }
 
-    if (guestCount > table.capacity) {
-      return res.status(400).json({
-        message: `This table can accommodate a maximum of ${table.capacity} people`,
-      });
-    }
-
-    const existingSession = await DiningSession.findOne({
+    // Get all active groups sitting at this table
+    const activeSessions = await DiningSession.find({
       tableNumber,
       status: "active",
     });
 
-    if (existingSession) {
+    // Calculate the total number of occupied seats
+    const occupiedSeats = activeSessions.reduce(
+      (total, session) => total + session.guestCount,
+      0,
+    );
+
+    const availableSeats = table.capacity - occupiedSeats;
+
+    if (guests > availableSeats) {
       return res.status(400).json({
-        message: "This table already has an active dining session",
-        session: existingSession,
+        message: `Only ${availableSeats} seat(s) available at ${tableNumber}`,
+        capacity: table.capacity,
+        occupiedSeats,
+        availableSeats,
       });
     }
 
+    // Create a separate session for this group
     const session = await DiningSession.create({
-      sessionId: `SES-${Date.now()}`,
+      sessionId: `SES-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
       tableNumber,
-      guestCount,
+      guestCount: guests,
     });
 
+    // Mark the physical table occupied
     table.status = "occupied";
     await table.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Dining session created successfully",
       session,
+      capacity: table.capacity,
+      occupiedSeats: occupiedSeats + guests,
+      availableSeats: availableSeats - guests,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Create dining session error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to create dining session",
       error: error.message,
     });
   }
 };
+
 export const getDiningSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -274,7 +287,14 @@ export const confirmPayment = async (req, res) => {
     });
 
     if (table) {
-      table.status = "available";
+      // Check whether another group is still dining here
+      const remainingSessions = await DiningSession.countDocuments({
+        tableNumber: session.tableNumber,
+        status: "active",
+      });
+
+      table.status = remainingSessions > 0 ? "occupied" : "available";
+
       await table.save();
     }
 
@@ -288,6 +308,44 @@ export const confirmPayment = async (req, res) => {
     res.status(500).json({
       message: "Failed to confirm payment",
       error: error.message,
+    });
+  }
+};
+export const getTablesWithAvailability = async (req, res) => {
+  try {
+    const tables = await Table.find({ active: true });
+
+    const result = await Promise.all(
+      tables.map(async (table) => {
+        const sessions = await DiningSession.find({
+          tableNumber: table.tableNumber,
+          status: "active",
+        });
+
+        const occupiedSeats = sessions.reduce(
+          (total, session) => total + session.guestCount,
+          0,
+        );
+
+        const availableSeats = Math.max(0, table.capacity - occupiedSeats);
+
+        return {
+          _id: table._id,
+          tableNumber: table.tableNumber,
+          capacity: table.capacity,
+          occupiedSeats,
+          availableSeats,
+          status: availableSeats === 0 ? "occupied" : "available",
+        };
+      }),
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to fetch table availability:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch table availability",
     });
   }
 };

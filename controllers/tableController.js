@@ -19,26 +19,29 @@ export const getTables = async (req, res) => {
 
 export const createTable = async (req, res) => {
   try {
-    const { tableNumber } = req.body;
+    const { tableNumber, capacity } = req.body;
 
-    if (!tableNumber) {
+    console.log("Create table request:", req.body);
+
+    if (!tableNumber || !capacity) {
       return res.status(400).json({
-        message: "Table number is required",
+        message: "Table number and capacity are required",
       });
     }
 
     const existingTable = await Table.findOne({
-      tableNumber,
+      tableNumber: tableNumber.trim(),
     });
 
     if (existingTable) {
       return res.status(400).json({
-        message: "Table already exists",
+        message: "This table number already exists",
       });
     }
 
     const table = await Table.create({
-      tableNumber,
+      tableNumber: tableNumber.trim(),
+      capacity: Number(capacity),
     });
 
     res.status(201).json({
@@ -46,11 +49,10 @@ export const createTable = async (req, res) => {
       table,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Create table error:", error);
 
     res.status(500).json({
-      message: "Failed to create table",
-      error: error.message,
+      message: error.message || "Failed to create table",
     });
   }
 };
@@ -98,10 +100,7 @@ export const getTablesWithAvailability = async (req, res) => {
           0,
         );
 
-        const availableSeats = Math.max(
-          0,
-          table.capacity - occupiedSeats,
-        );
+        const availableSeats = Math.max(0, table.capacity - occupiedSeats);
 
         return {
           _id: table._id,
